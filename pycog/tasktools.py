@@ -197,7 +197,8 @@ def performance_cb_simple(trials, z):
 
     ends    = [len(trial['t'])-1 for trial in trials]
     # The 50 here checks 50 ms before the post_delay period.
-    choices = [z[ends[i] - (50 + post_delay) // dt - 1, i][0] for i, end in enumerate(ends)]
+    choices = [z[ends[i] - (50 + post_delay) // dt - 1, i][0] for i, end in
+               enumerate(ends)]
     
     num_correct = float(0)
     num_trials = 0
@@ -211,9 +212,8 @@ def performance_cb_simple(trials, z):
         #if np.abs(choices[i] - choice) < 0.3:
         #    num_correct += 1
         if np.sign(choices[i]) == choice:
-			num_correct += 1
-
-
+            num_correct = num_correct + 1
+            
         num_trials += 1 
         
     return 100 * num_correct / num_trials
@@ -233,17 +233,17 @@ def performance_cb_simple_threshold(trials, z):
     for (i, trial) in enumerate(trials):
         if trial['info']['catch']:
             continue
-    
+
         choice = trial['info']['choice']
-        
+
         #if np.abs(choices[i] - choice) < 0.3:
         #    num_correct += 1
         if np.sign(choices[i]) == choice & np.abs(choices[i]) > threshold:
-			num_correct += 1
+            num_correct = num_correct + 1
 
 
         num_trials += 1 
-        
+
     return 100 * num_correct / num_trials
  
 def performance_cb_simple_racers(trials, z):

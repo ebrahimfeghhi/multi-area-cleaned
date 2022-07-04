@@ -1822,14 +1822,28 @@ class Dynamics(PSTH):
     # Initialize
     # ==========
 
-    def __init__(self, rnnfile, modelfile, num_trials=100, seed=1, target_output=False, rnnparams={}, threshold=None, sort=['dirs', 'cohs'], align='cb', dims=np.array((0,1)), partition_pca=None, onlyCorrect=False):
+    def __init__(self, rnnfile, modelfile, num_trials=100, seed=1, target_output=False, rnnparams={}, threshold=None, sort=['dirs', 'cohs'], align='cb', 
+    dims=np.array((0,1)), partition_pca=None, onlyCorrect=False, removeCI=True):
 
         # Init as a PSTH and generate them
         super(Dynamics, self).__init__(rnnfile, modelfile, num_trials, seed, target_output, rnnparams, threshold, sort, align)
         self.gen_psth(onlyCorrect=onlyCorrect)
 
-        # Calculate the matrix to perform PCA on
-        data    = np.hstack([one_psth['psth'] for one_psth in self.psths])
+        # Calculate matrix to perform PCA on
+        if removeCI:
+            # each psth is of shape num_units by num_timesteps 
+            # we can stack them along axis 1 to create data, of shape num_units x num_conditions x num_timesteps
+            data = np.stack([one_psth['psth'] for one_psth in self.psths], axis=1)
+            self.cond = [one_psth['cond'] for one_psth in self.psths]
+            # shape num_units x 1 x timesteps, we expand dims along axis 1 so that broadcasting can be applied
+            condition_independent_signal = np.expand_dims(np.mean(data,axis=1),axis=1)
+            self.data_3d = data - condition_independent_signal # remove CI signal
+            data = np.reshape(data, (self.data_3d.shape[0], self.data_3d.shape[1]*self.data_3d.shape[2])) # reshape to num_units x (conditions x timesteps)
+            print("DATA SHAPE AFTER REMOVING CI SIGNAL: ", data.shape)
+        else:
+            data = np.hstack([one_psth['psth'] for one_psth in self.psths])
+        
+        self.data = data
         data_x  = np.hstack([one_psth['x_psth'] for one_psth in self.psths])
         data_rd = np.hstack([np.diff(one_psth['psth'], axis=1) for one_psth in self.psths])
 
